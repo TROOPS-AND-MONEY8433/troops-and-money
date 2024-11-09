@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Over</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #2b2b2b;
+            color: white;
+            margin: 0;
+        }
+        .message-container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container">
+        <h1>Game Over!</h1>
+        <p>You have died <span id="deathCounter">0</span> times.</p>
+        <button onclick="goToMainMenu()">Back to Main Menu</button>
+    </div>
+
+    <script>
+        // Retrieve death count from localStorage and display it
+        const deathCount = localStorage.getItem('deathCount') ? parseInt(localStorage.getItem('deathCount')) : 0;
+        document.getElementById('deathCounter').textContent = deathCount;
+
+        function goToMainMenu() {
+            window.location.href = "menu.html"; // Redirect to the main menu
+        }
+    </script>
+</body>
+</html>

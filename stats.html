@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Stats</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 30px;
+            margin-bottom: 30px;
+        }
+        .stat {
+            margin: 20px 0;
+            font-size: 20px;
+        }
+        .btn {
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Game Stats</h1>
+    <div class="stat" id="enemyKills"></div>
+    <div class="stat" id="totalKills"></div>
+    <div class="stat" id="deathCount"></div>
+    <button class="btn" onclick="goBackToMenu()">Back to Main Menu</button>
+
+    <script>
+        // Retrieve stats from localStorage
+        const deathCount = localStorage.getItem('deathCount') || 0;
+        const zombieKills = localStorage.getItem('zombieKills') || 0;
+        const ghostKills = localStorage.getItem('ghostKills') || 0;
+
+        const totalKills = parseInt(zombieKills) + parseInt(ghostKills); // Total number of kills
+
+        // Update stats display
+        document.getElementById('enemyKills').innerHTML = `Zombie Kills: ${zombieKills} <br> Ghost Kills: ${ghostKills}`;
+        document.getElementById('totalKills').innerHTML = `Total Kills: ${totalKills}`;
+        document.getElementById('deathCount').innerHTML = `You have died ${deathCount} times.`;
+
+        // Go back to main menu
+        function goBackToMenu() {
+            window.location.href = 'index.html'; // Redirect to the main menu
+        }
+    </script>
+</body>
+</html>

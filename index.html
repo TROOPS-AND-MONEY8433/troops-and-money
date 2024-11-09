@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Menu - Tower Defense</title>
+    <style>
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        .btn {
+            padding: 15px 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            margin: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        #deathCount {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #ff6347;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Welcome to Tower Defense Game</h1>
+    <button class="btn" onclick="startGame()">Start Game</button>
+    <button class="btn" onclick="goToStats()">View Stats</button>
+    <div id="deathCount"></div>
+
+    <script>
+        // Retrieve the death count from localStorage
+        let deathCount = localStorage.getItem('deathCount') || 0;
+        document.getElementById('deathCount').innerHTML = `You have died ${deathCount} times.`;
+
+        // Start Game Function
+        function startGame() {
+            window.location.href = 'game.html'; // Redirect to the game page
+        }
+
+        // Go to Stats page
+        function goToStats() {
+            window.location.href = 'stats.html'; // Redirect to the stats page
+        }
+    </script>
+</body>
+</html>

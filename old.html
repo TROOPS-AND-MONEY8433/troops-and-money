@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tower Defense Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="1920" height="1080"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game variables
+        let money = 100; // Starting money
+        let wave = 1; // Start at wave 1
+        let towers = [];
+        let enemies = [];
+        let baseHP = 100; // Base starts with 100 HP
+        let bullets = []; // Store all bullets
+        let enemySpawnInterval; // To manage enemy spawn timing
+        const TOWER1_COST = 100;
+        const TOWER2_COST = 300;
+
+        // Load images
+        const tower1Img = new Image();
+        const tower2Img = new Image();
+        const enemyImg = new Image();
+        const mapImg = new Image();
+
+        tower1Img.src = 'tower1.png'; // Path to tower 1 image
+        tower2Img.src = 'tower2.png'; // Path to tower 2 image
+        enemyImg.src = 'enemy.png';    // Path to enemy image
+        mapImg.src = 'map.png';        // Path to map image
+
+        // Enemy Class
+        class Enemy {
+            constructor() {
+                this.x = 100; // Spawn at X = 100
+                this.y = 500; // Spawn Y fixed at 500
+                this.health = this.getHealthBasedOnWave(wave); // Health of the enemy
+                this.width = 50; // Width for collision detection
+                this.height = 50; // Height for collision detection
+            }
+
+            getHealthBasedOnWave(currentWave) {
+                if (currentWave < 10) return 100; // Default health
+                if (currentWave < 20) return 150; // Health for waves 10-19
+                if (currentWave < 30) return 200; // Health for waves 20-29
+                if (currentWave < 40) return 250; // Health for waves 30-39
+                return 300; // Health for waves 40+
+            }
+
+            move() {
+                this.x += 2; // Move towards the base
+            }
+
+            draw() {
+                ctx.drawImage(enemyImg, this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+            }
+
+            isAlive() {
+                return this.health > 0; // Check if enemy is alive
+            }
+        }
+
+        // Bullet Class
+        class Bullet {
+            constructor(x, y, target) {
+                this.x = x;
+                this.y = y;
+                this.target = target;
+                this.speed = 5;
+                this.active = true; // Track if bullet is active
+            }
+
+            update() {
+                // Move bullet towards the target enemy
+                if (this.target && this.target.isAlive()) {
+                    const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
+                    this.x += this.speed * Math.cos(angle);
+                    this.y += this.speed * Math.sin(angle);
+
+                    // Check for collision with the target enemy
+                    if (this.x >= this.target.x - this.target.width / 2 &&
+                        this.x <= this.target.x + this.target.width / 2 &&
+                        this.y >= this.target.y - this.target.height / 2 &&
+                        this.y <= this.target.y + this.target.height / 2) {
+                        this.target.health -= 100; // Damage the enemy
+                        this.active = false; // Bullet is no longer active
+                    }
+                } else {
+                    this.active = false; // Deactivate bullet if target is dead
+                }
+            }
+
+            draw() {
+                if (this.active) {
+                    ctx.fillStyle = 'yellow'; // Color for the bullet
+                    ctx.fillRect(this.x, this.y, 10, 10); // Draw bullet as a rectangle
+                }
+            }
+        }
+
+        // Tower Class
+        class Tower {
+            constructor(x, y, cost, image) {
+                this.x = x;
+                this.y = y;
+                this.cost = cost;
+                this.image = image;
+                this.lastShotTime = 0; // Track the last shot time
+                this.shootCooldown = 1000; // Tower shoot cooldown in milliseconds
+                this.range = 300; // Shooting range
+            }
+
+            draw() {
+                ctx.drawImage(this.image, this.x - 25, this.y - 25, 50, 50); // Draw the tower
+                ctx.strokeStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            shoot(enemies) {
+                if (Date.now() - this.lastShotTime > this.shootCooldown) { // Check if enough time has passed since last shot
+                    for (const enemy of enemies) {
+                        const dist = Math.hypot(this.x - enemy.x, this.y - enemy.y);
+                        if (dist < this.range && enemy.isAlive()) {
+                            bullets.push(new Bullet(this.x, this.y, enemy)); // Create a new bullet aimed at the enemy
+                            this.lastShotTime = Date.now(); // Update last shot time
+                            break; // Only shoot at the first enemy within range
+                        }
+                    }
+                }
+            }
+        }
+
+        // Start a new wave
+        function startNewWave() {
+            const enemiesToSpawn = wave * 5; // Increase the number of enemies every wave
+            let spawnedEnemies = 0; // Track the number of spawned enemies
+
+            enemySpawnInterval = setInterval(() => {
+                if (spawnedEnemies < enemiesToSpawn) {
+                    enemies.push(new Enemy());
+                    spawnedEnemies++;
+                } else {
+                    clearInterval(enemySpawnInterval); // Stop spawning when done
+                    enemySpawnInterval = null; // Reset the interval
+                    requestAnimationFrame(gameLoop);
+                }
+            }, 250); // Spawn an enemy every 0.25 seconds
+        }
+
+        // Game Loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the background map
+            ctx.drawImage(mapImg, 0, 0, canvas.width, canvas.height);
+
+            // Handle enemy movement and drawing
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                enemy.move();
+                enemy.draw();
+
+                // Check if the enemy has reached the base
+                if (enemy.x >= 1650) {
+                    baseHP -= 25; // Deduct HP from the base
+                    enemies.splice(i, 1); // Remove enemy that reached the base
+                }
+
+                // Remove enemy if health is less than or equal to 0
+                if (!enemy.isAlive()) {
+                    enemies.splice(i, 1); // Remove dead enemy
+                    money += 50; // Gain money when enemy is killed
+                }
+            }
+
+            // Handle tower shooting and drawing
+            for (const tower of towers) {
+                tower.shoot(enemies);
+                tower.draw();
+            }
+
+            // Check for defeated enemies and spawn new wave
+            if (enemies.length === 0 && enemySpawnInterval === null) {
+                money += 100; // Gain 100 money per round
+                wave++; // Increment the wave counter
+                startNewWave(); // Start the new wave
+            }
+
+            // Display wave, money, and base HP
+            ctx.fillStyle = 'white';
+            ctx.font = '24px Arial';
+            ctx.fillText('Wave: ' + wave, 10, 30);
+            ctx.fillText('Money: $' + money, 10, 60);
+            ctx.fillText('Base HP: ' + baseHP, 10, 90);
+
+            // Game Over check
+            if (baseHP <= 0) {
+                window.location.href = 'dead.html'; // Redirect to dead.html when base HP is 0
+            }
+
+            // Update bullets
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                bullets[i].update();
+                if (!bullets[i].active) {
+                    bullets.splice(i, 1); // Remove inactive bullets
+                } else {
+                    bullets[i].draw();
+                }
+            }
+
+            requestAnimationFrame(gameLoop); // Continue the game loop
+        }
+
+        // Mouse click event to place towers
+        canvas.addEventListener('click', (event) => {
+            const mouseX = event.clientX;
+            const mouseY = event.clientY;
+
+            // Place Tower 1
+            if (money >= TOWER1_COST) {
+                towers.push(new Tower(mouseX, mouseY, TOWER1_COST, tower1Img));
+                money -= TOWER1_COST;
+            } 
+            // Place Tower 2
+            else if (money >= TOWER2_COST) {
+                towers.push(new Tower(mouseX, mouseY, TOWER2_COST, tower2Img));
+                money -= TOWER2_COST;
+            }
+        });
+
+        // Start the first wave
+        startNewWave();
+
+    </script>
+</body>
+</html>
